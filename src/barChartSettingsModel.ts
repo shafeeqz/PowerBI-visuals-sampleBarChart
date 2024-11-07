@@ -31,7 +31,7 @@ class EnableAxisCardSettings extends Card {
     slices: Slice[] = [this.fill];
 }
 
-class backgroundImage extends Card {
+class backgroundImage extends Card {//not relevant to the gradient changes
     name: string = 'image';
     displayName?: string = 'Background image';
     a = new formattingSettings.ImageUpload({
@@ -189,7 +189,7 @@ class DirectEditSettings extends Card {
 * BarChart formatting settings model class
 */
 export class BarChartSettingsModel extends Model {
-    image = new backgroundImage();
+    image = new backgroundImage();// not relevant to the gradient changes
     enableAxis = new EnableAxisCardSettings();
     colorSelector = new ColorSelectorCardSettings();
     generalView = new GeneralViewCardSettings();

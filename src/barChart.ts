@@ -270,20 +270,6 @@ function getColumnStrokeWidth(isHighContrast: boolean): number {
         : 0;
 }
 
-function mapPositiveToRange(x, min, max) {
-    if (x <= 0) {
-        throw new Error("The input value must be positive.");
-    }
-
-    // Apply a logarithmic scale to handle wide positive input ranges
-    const logX = Math.log(x);
-    const logMin = 0; // log(1) since input is always positive
-    const logMax = Math.log(1e6); // Adjust based on the expected largest value range
-
-    return min + (max - min) * ((logX - logMin) / (logMax - logMin));
-}
-
-
 export class BarChart implements IVisual {
     private averageLine: Selection<SVGElement>;
     private barContainer: Selection<SVGElement>;
@@ -417,24 +403,6 @@ export class BarChart implements IVisual {
                 .domain([options.dataViews[0].categorical?.values?.[0]?.minLocal, options.dataViews[0].categorical?.values?.[0]?.maxLocal]) // Domain based on data values
                 .range([linearGradient2.min.color, linearGradient2.max.color]) // Gradient from red to green
                 .interpolate(interpolateRgb); // Interpolation type
-            const defs = this.svg.append("defs");
-
-            // Create a linear gradient
-            // gradient = defs.append("linearGradient")
-            //     .attr("id", "bar-gradient")
-            //     .attr("x1", "0%")
-            //     .attr("x2", "100%")
-            //     .attr("y1", "0%")
-            //     .attr("y2", "100%");
-
-            // // Add gradient stops (min and max colors)
-            // gradient.append("stop")
-            //     .attr("offset", "0%")
-            //     .attr("stop-color", linearGradient2.min.color);  // Replace with your min color
-
-            // gradient.append("stop")
-            //     .attr("offset", "100%")
-            //     .attr("stop-color", linearGradient2.max.color);
         } else {
             this.formattingSettings.colorSelector.fillRule.visible = false;
         }
@@ -504,7 +472,7 @@ export class BarChart implements IVisual {
             .style("fill", (dataPoint: BarChartDataPoint) => useGradient && colorScale ? colorScale(dataPoint.value) : dataPoint.color)
             .style("stroke", (dataPoint: BarChartDataPoint) => dataPoint.strokeColor)
             .style("stroke-width", (dataPoint: BarChartDataPoint) => `${dataPoint.strokeWidth}px`)
-            .each(function (dataPoint: BarChartDataPoint) {
+            .each(function (dataPoint: BarChartDataPoint) {//can be changed for arrow function, get rid of fst.
                 if (useGradient) {
                     (fst.colorSelector.slices[dataPoint.index + 1] as ColorPicker).value.value = colorScale(dataPoint.value);
                 }
