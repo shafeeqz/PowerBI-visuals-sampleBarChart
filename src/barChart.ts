@@ -9,6 +9,8 @@ import {
     ScaleLinear,
     ScaleBand
 } from "d3-scale";
+import * as d3 from 'd3'
+import { interpolateRgb } from 'd3-interpolate'; // For d3.interpolateRgb
 
 import { Axis, axisBottom } from "d3-axis";
 
@@ -20,7 +22,7 @@ import {
     HtmlSubSelectableClass, HtmlSubSelectionHelper, SubSelectableDirectEdit as SubSelectableDirectEditAttr,
     SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute, SubSelectableTypeAttribute
 } from "powerbi-visuals-utils-onobjectutils";
-import { dataViewObjects} from "powerbi-visuals-utils-dataviewutils";
+import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
 
 import { BarChartSettingsModel } from "./barChartSettingsModel";
 
@@ -50,6 +52,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import SubSelectionStylesType = powerbi.visuals.SubSelectionStylesType;
 import FormattingId = powerbi.visuals.FormattingId;
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import { ColorPicker } from "powerbi-visuals-utils-formattingmodel/lib/FormattingSettingsComponents";
 
 
 /**
@@ -248,7 +251,7 @@ function getColumnColorByIndex(
     };
 
     let colorFromObjects: Fill;
-    if(category.objects?.[index]){
+    if (category.objects?.[index]) {
         colorFromObjects = dataViewObjects.getValue(category?.objects[index], prop);
     }
 
@@ -266,6 +269,20 @@ function getColumnStrokeWidth(isHighContrast: boolean): number {
         ? 2
         : 0;
 }
+
+function mapPositiveToRange(x, min, max) {
+    if (x <= 0) {
+        throw new Error("The input value must be positive.");
+    }
+
+    // Apply a logarithmic scale to handle wide positive input ranges
+    const logX = Math.log(x);
+    const logMin = 0; // log(1) since input is always positive
+    const logMax = Math.log(1e6); // Adjust based on the expected largest value range
+
+    return min + (max - min) * ((logX - logMin) / (logMax - logMin));
+}
+
 
 export class BarChart implements IVisual {
     private averageLine: Selection<SVGElement>;
@@ -386,10 +403,42 @@ export class BarChart implements IVisual {
         this.formatMode = options.formatMode;
         const width = options.viewport.width;
         let height = options.viewport.height;
-
         this.svg
             .attr("width", width)
             .attr("height", height);
+        //@ts-ignore
+        const linearGradient2: powerbi.LinearGradient2Generic<string, number, any> = options.dataViews[0].metadata?.objects?.colorSelector?.fillRule?.linearGradient2;
+        const useGradient = !!linearGradient2 && linearGradient2.max.value;
+        let colorScale;
+        if (useGradient) {
+            this.formattingSettings.colorSelector.fillRule.visible = true;
+            this.formattingSettings.colorSelector.fillRule.value = `${linearGradient2.min.color},${linearGradient2.max.color}`;
+            colorScale = d3.scaleLinear()
+                .domain([options.dataViews[0].categorical?.values?.[0]?.minLocal, options.dataViews[0].categorical?.values?.[0]?.maxLocal]) // Domain based on data values
+                .range([linearGradient2.min.color, linearGradient2.max.color]) // Gradient from red to green
+                .interpolate(interpolateRgb); // Interpolation type
+            const defs = this.svg.append("defs");
+
+            // Create a linear gradient
+            // gradient = defs.append("linearGradient")
+            //     .attr("id", "bar-gradient")
+            //     .attr("x1", "0%")
+            //     .attr("x2", "100%")
+            //     .attr("y1", "0%")
+            //     .attr("y2", "100%");
+
+            // // Add gradient stops (min and max colors)
+            // gradient.append("stop")
+            //     .attr("offset", "0%")
+            //     .attr("stop-color", linearGradient2.min.color);  // Replace with your min color
+
+            // gradient.append("stop")
+            //     .attr("offset", "100%")
+            //     .attr("stop-color", linearGradient2.max.color);
+        } else {
+            this.formattingSettings.colorSelector.fillRule.visible = false;
+        }
+
 
         if (this.formattingSettings.enableAxis.show.value) {
             const margins = BarChart.Config.margins;
@@ -439,7 +488,7 @@ export class BarChart implements IVisual {
             .merge(<any>this.barSelection);
 
         barSelectionMerged.classed("bar", true);
-
+        const fst = this.formattingSettings;
         const opacity: number = this.formattingSettings.generalView.opacity.value / 100;
         barSelectionMerged
             .attr(SubSelectableObjectNameAttribute, "colorSelector")
@@ -452,9 +501,14 @@ export class BarChart implements IVisual {
             .attr("x", (dataPoint: BarChartDataPoint) => xScale(dataPoint.category))
             .style("fill-opacity", opacity)
             .style("stroke-opacity", opacity)
-            .style("fill", (dataPoint: BarChartDataPoint) => dataPoint.color)
+            .style("fill", (dataPoint: BarChartDataPoint) => useGradient && colorScale ? colorScale(dataPoint.value) : dataPoint.color)
             .style("stroke", (dataPoint: BarChartDataPoint) => dataPoint.strokeColor)
-            .style("stroke-width", (dataPoint: BarChartDataPoint) => `${dataPoint.strokeWidth}px`);
+            .style("stroke-width", (dataPoint: BarChartDataPoint) => `${dataPoint.strokeWidth}px`)
+            .each(function (dataPoint: BarChartDataPoint) {
+                if (useGradient) {
+                    (fst.colorSelector.slices[dataPoint.index + 1] as ColorPicker).value.value = colorScale(dataPoint.value);
+                }
+            });
 
         this.tooltipServiceWrapper.addTooltip(barSelectionMerged,
             (dataPoint: BarChartDataPoint) => this.getTooltipData(dataPoint),
@@ -483,6 +537,8 @@ export class BarChart implements IVisual {
             .exit()
             .remove();
         this.handleClick(barSelectionMerged);
+
+        debugger
     }
 
     private removeEventHandlers(barSelectionMerged: d3Selection<SVGRectElement, any, any, any>) {

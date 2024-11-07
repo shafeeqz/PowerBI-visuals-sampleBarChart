@@ -31,11 +31,29 @@ class EnableAxisCardSettings extends Card {
     slices: Slice[] = [this.fill];
 }
 
+class backgroundImage extends Card {
+    name: string = 'image';
+    displayName?: string = 'Background image';
+    a = new formattingSettings.ImageUpload({
+        name: 'a',
+        value: {
+            url: '',
+            name: ''
+        }
+    })
+    slices: Slice[] = [this.a];
 
+}
 class ColorSelectorCardSettings extends Card {
     name: string = "colorSelector";
     displayName: string = "Data Colors";
-    slices: Slice[] = [];
+    fillRule = new formattingSettings.GradientBar({
+        name: 'fillRule',
+        displayName: "Gradient",
+        visible: false,
+        value: "#AA7733,#4488FF"
+    });
+    slices: Slice[] = [this.fillRule];
 }
 
 class GeneralViewCardSettings extends Card {
@@ -171,12 +189,13 @@ class DirectEditSettings extends Card {
 * BarChart formatting settings model class
 */
 export class BarChartSettingsModel extends Model {
+    image = new backgroundImage();
     enableAxis = new EnableAxisCardSettings();
     colorSelector = new ColorSelectorCardSettings();
     generalView = new GeneralViewCardSettings();
     averageLine = new AverageLineCardSettings();
     directEditSettings = new DirectEditSettings();
-    cards: Card[] = [this.enableAxis, this.colorSelector, this.generalView, this.averageLine, this.directEditSettings];
+    cards: Card[] = [this.enableAxis, this.colorSelector, this.generalView, this.averageLine, this.directEditSettings, this.image];
 
     /**
      * populate colorSelector object categories formatting properties

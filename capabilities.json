@@ -1,6 +1,11 @@
 {
   "dataRoles": [
     {
+      "name": "Category1",
+      "kind": "Grouping",
+      "displayName": "Details"
+    },
+    {
       "displayName": "Category Data",
       "name": "category",
       "kind": "Grouping"
@@ -14,6 +19,11 @@
       "displayName": "Tooltips",
       "name": "Tooltips",
       "kind": "Measure"
+    },
+    {
+      "name": "Gradient",
+      "kind": "Measure",
+      "displayName": "Color saturation"
     }
   ],
   "dataViewMappings": [
@@ -21,10 +31,10 @@
       "conditions": [
         {
           "category": {
-            "max": 1
+            "max": 4
           },
           "measure": {
-            "max": 1
+            "max": 4
           }
         }
       ],
@@ -40,13 +50,23 @@
               "bind": {
                 "to": "measure"
               }
-            }
+            },
+            {"for":{"in":"Gradient"}}
           ]
         }
       }
     }
   ],
   "objects": {
+    "image": {
+      "properties": {
+        "a": {
+          "type": {
+            "enumeration": []
+          }
+        }
+      }
+    },
     "general": {
       "properties": {
         "formatString": {
@@ -159,6 +179,20 @@
               "solid": {
                 "color": true
               }
+            }
+          }
+        },
+        "fillRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "fill",
+              "selector": [
+                "Category1"
+              ]
             }
           }
         }
