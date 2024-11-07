@@ -392,6 +392,7 @@ export class BarChart implements IVisual {
         this.svg
             .attr("width", width)
             .attr("height", height);
+
         //@ts-ignore
         const linearGradient2: powerbi.LinearGradient2Generic<string, number, any> = options.dataViews[0].metadata?.objects?.colorSelector?.fillRule?.linearGradient2;
         const useGradient = !!linearGradient2 && linearGradient2.max.value;
@@ -401,7 +402,7 @@ export class BarChart implements IVisual {
             this.formattingSettings.colorSelector.fillRule.value = `${linearGradient2.min.color},${linearGradient2.max.color}`;
             colorScale = d3.scaleLinear()
                 .domain([options.dataViews[0].categorical?.values?.[0]?.minLocal, options.dataViews[0].categorical?.values?.[0]?.maxLocal]) // Domain based on data values
-                .range([linearGradient2.min.color, linearGradient2.max.color]) // Gradient from red to green
+                .range([linearGradient2.min.color, linearGradient2.max.color]) // Gradient from min to max
                 .interpolate(interpolateRgb); // Interpolation type
         } else {
             this.formattingSettings.colorSelector.fillRule.visible = false;
